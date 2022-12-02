@@ -8,6 +8,7 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
+import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.Subsystems.DrivetrainSubsytem;
 
@@ -33,12 +34,14 @@ public class RobotContainer {
     }
 
     RunCommand dc = new RunCommand(
-        () -> m_swerve.drive(m_xspeedLimiter.calculate(m_controller.getRawAxis(0)), -m_yspeedLimiter.calculate(m_controller.getRawAxis(1)), m_rotLimiter.calculate(m_controller.getRawAxis(2)), true),
+        () -> m_swerve.drive(m_xspeedLimiter.calculate(m_controller.getRawAxis(0)), -m_yspeedLimiter.calculate(m_controller.getRawAxis(1)), m_rotLimiter.calculate(m_controller.getRawAxis(4)), true),
         m_swerve
       );
     dc.setName("Controller");
 
     m_swerve.setDefaultCommand(dc);
+
+    //new JoystickButton(m_controller, XboxController.Button.kA.value)
   }
 
   public void disableControllers() {
