@@ -15,6 +15,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.TalonFXSimCollection;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
+import com.ctre.phoenix.sensors.CANCoder;
 
 public class SwerveModuleSubsystem extends SubsystemBase {
   private static final double kWheelRadius = 0.0508;
@@ -27,6 +28,7 @@ public class SwerveModuleSubsystem extends SubsystemBase {
 
   private final WPI_TalonFX m_driveMotor;
   private final WPI_TalonFX m_turningMotor;
+  private final CANCoder m_cCoder;
 
   private final TalonFXSimCollection m_driveMotorSim;
   private final TalonFXSimCollection m_turningMotorSim;
@@ -57,18 +59,20 @@ public class SwerveModuleSubsystem extends SubsystemBase {
    */
   public SwerveModuleSubsystem(
       int driveMotorChannel,
-      int turningMotorChannel) {
-    m_driveMotor = new WPI_TalonFX(driveMotorChannel);
-    m_turningMotor = new WPI_TalonFX(turningMotorChannel);
+      int turningMotorChannel,
+      int cCoderChannel) {
+    this.m_driveMotor = new WPI_TalonFX(driveMotorChannel);
+    this.m_turningMotor = new WPI_TalonFX(turningMotorChannel);
+    this.m_cCoder = new CANCoder(cCoderChannel);
 
-    m_driveMotorSim = m_driveMotor.getSimCollection();
-    m_turningMotorSim = m_turningMotor.getSimCollection();
-    m_driveVoltage = 0; //Tracking for simulation
-    m_turningVoltage = 0; //Tracking for simulation
+    this.m_driveMotorSim = m_driveMotor.getSimCollection();
+    this.m_turningMotorSim = m_turningMotor.getSimCollection();
+    this.m_driveVoltage = 0; //Tracking for simulation
+    this.m_turningVoltage = 0; //Tracking for simulation
 
     // Limit the PID Controller's input range between -pi and pi and set the input
     // to be continuous.
-    m_turningPIDController.enableContinuousInput(-Math.PI, Math.PI);
+    this.m_turningPIDController.enableContinuousInput(-Math.PI, Math.PI);
   }
 
   /**
@@ -80,6 +84,10 @@ public class SwerveModuleSubsystem extends SubsystemBase {
     return new SwerveModuleState(getDriveVelocity(), new Rotation2d(getTurningDistance()));
   }
   
+  public void zeroModule() {
+    setDesiredState(new SwerveModuleState(0d, new Rotation2d(0)));
+  }
+
   /**
    * Sets the desired state for the module.
    *
