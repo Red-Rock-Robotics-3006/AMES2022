@@ -84,7 +84,11 @@ public class DrivetrainSubsytem extends SubsystemBase {
   }
 
   public void zeroWheels() {
-
+    System.out.println("Running");
+    m_frontLeft.zeroModule();
+    m_frontRight.zeroModule();
+    m_backLeft.zeroModule();
+    //m_backRight.zeroModule();
   }
 
   /** Updates the field relative position of the robot. */

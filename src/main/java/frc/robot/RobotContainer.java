@@ -41,7 +41,16 @@ public class RobotContainer {
 
     m_swerve.setDefaultCommand(dc);
 
-    //new JoystickButton(m_controller, XboxController.Button.kA.value)
+    new JoystickButton(m_controller, XboxController.Button.kA.value)
+      .whenPressed(new InstantCommand(() -> {
+        m_swerve.setDefaultCommand(new RunCommand(() -> {
+          m_swerve.zeroWheels();
+        }, 
+        m_swerve));
+      }))
+      .whenReleased(new InstantCommand(() -> { 
+        m_swerve.setDefaultCommand(dc);;
+      }));
   }
 
   public void disableControllers() {
