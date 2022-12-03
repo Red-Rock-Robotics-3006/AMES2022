@@ -27,10 +27,10 @@ public class DrivetrainSubsytem extends SubsystemBase {
   private final Translation2d m_backLeftLocation = new Translation2d(-0.381, 0.381);
   private final Translation2d m_backRightLocation = new Translation2d(-0.381, -0.381);
 
-  private final SwerveModuleSubsystem m_frontLeft = new SwerveModuleSubsystem(20, 6);
-  private final SwerveModuleSubsystem m_frontRight = new SwerveModuleSubsystem(11, 8);
-  private final SwerveModuleSubsystem m_backLeft = new SwerveModuleSubsystem(4, 5);
-  private final SwerveModuleSubsystem m_backRight = new SwerveModuleSubsystem(50, 3);
+  private final SwerveModuleSubsystem m_frontLeft = new SwerveModuleSubsystem(20, 6, 40);
+  private final SwerveModuleSubsystem m_frontRight = new SwerveModuleSubsystem(11, 8, 41);
+  private final SwerveModuleSubsystem m_backLeft = new SwerveModuleSubsystem(4, 5, 42);
+  private final SwerveModuleSubsystem m_backRight = new SwerveModuleSubsystem(50, 3, 43);
 
   private final AnalogGyro m_gyro = new AnalogGyro(0);
   private final AnalogGyroSim m_gyroSim = new AnalogGyroSim(m_gyro);
