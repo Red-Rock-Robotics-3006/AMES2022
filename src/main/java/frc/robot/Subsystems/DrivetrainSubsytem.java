@@ -27,10 +27,10 @@ public class DrivetrainSubsytem extends SubsystemBase {
   private final Translation2d m_backLeftLocation = new Translation2d(-0.381, 0.381);
   private final Translation2d m_backRightLocation = new Translation2d(-0.381, -0.381);
 
-  private final SwerveModuleSubsystem m_frontLeft = new SwerveModuleSubsystem(1, 2, 40);
-  private final SwerveModuleSubsystem m_frontRight = new SwerveModuleSubsystem(3, 4, 41);
-  private final SwerveModuleSubsystem m_backLeft = new SwerveModuleSubsystem(5, 6, 42);
-  private final SwerveModuleSubsystem m_backRight = new SwerveModuleSubsystem(7, 8, 43);
+  private final SwerveModuleSubsystem m_frontLeft = new SwerveModuleSubsystem(20, 6);
+  private final SwerveModuleSubsystem m_frontRight = new SwerveModuleSubsystem(11, 8);
+  private final SwerveModuleSubsystem m_backLeft = new SwerveModuleSubsystem(4, 5);
+  private final SwerveModuleSubsystem m_backRight = new SwerveModuleSubsystem(50, 3);
 
   private final AnalogGyro m_gyro = new AnalogGyro(0);
   private final AnalogGyroSim m_gyroSim = new AnalogGyroSim(m_gyro);
@@ -69,7 +69,7 @@ public class DrivetrainSubsytem extends SubsystemBase {
         m_kinematics.toSwerveModuleStates(
             fieldRelative
                 ? ChassisSpeeds.fromFieldRelativeSpeeds(10*xSpeed, 10*ySpeed, 5*rot, m_gyro.getRotation2d())
-                : new ChassisSpeeds(10*xSpeed, 10*ySpeed, 5*rot));
+                : new ChassisSpeeds(xSpeed, ySpeed, rot));
     double idealModule1Velocity = swerveModuleStates[0].speedMetersPerSecond;
     SwerveDriveKinematics.desaturateWheelSpeeds(swerveModuleStates, kMaxSpeed);
 
