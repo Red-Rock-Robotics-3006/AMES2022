@@ -8,8 +8,10 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
+import edu.wpi.first.wpilibj2.command.button.Button;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.Commands.ZeroWheelsCommand;
 import frc.robot.Subsystems.DrivetrainSubsytem;
 
 public class RobotContainer {
@@ -29,6 +31,7 @@ public class RobotContainer {
   }
 
   public void enableControllers() {
+    System.out.println("Hello---------");
     if (m_swerve.getDefaultCommand() != null) {
       m_swerve.getDefaultCommand().cancel();
     }
@@ -41,16 +44,11 @@ public class RobotContainer {
 
     m_swerve.setDefaultCommand(dc);
 
-    new JoystickButton(m_controller, XboxController.Button.kA.value)
-      .whenPressed(new InstantCommand(() -> {
-        m_swerve.setDefaultCommand(new RunCommand(() -> {
-          m_swerve.zeroWheels();
-        }, 
-        m_swerve));
-      }))
-      .whenReleased(new InstantCommand(() -> { 
+    new Button(() -> m_controller.getRawAxis(0) > 0.5)
+      .whenPressed(() -> (new ZeroWheelsCommand(m_swerve)).schedule());
+      /*.whenReleased(new InstantCommand(() -> { 
         m_swerve.setDefaultCommand(dc);;
-      }));
+      }));*/
   }
 
   public void disableControllers() {

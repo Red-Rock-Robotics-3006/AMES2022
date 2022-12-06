@@ -5,14 +5,12 @@
 package frc.robot.Subsystems;
 
 import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.math.controller.ProfiledPIDController;
-import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
-import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
-import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.TalonFXSimCollection;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 import com.ctre.phoenix.sensors.CANCoder;
@@ -22,9 +20,9 @@ public class SwerveModuleSubsystem extends SubsystemBase {
   private static final int kEncoderResolution = 2048;
   private static final double kSensorGearRatio = 1;
 
-  private static final double kModuleMaxAngularVelocity = DrivetrainSubsytem.kMaxAngularSpeed;
-  private static final double kModuleMaxAngularAcceleration =
-      2 * Math.PI; // radians per second squared
+  //private static final double kModuleMaxAngularVelocity = DrivetrainSubsytem.kMaxAngularSpeed;
+  //private static final double kModuleMaxAngularAcceleration =
+      //2 * Math.PI; // radians per second squared
 
   private final WPI_TalonFX m_driveMotor;
   private final WPI_TalonFX m_turningMotor;
@@ -36,7 +34,7 @@ public class SwerveModuleSubsystem extends SubsystemBase {
   private double m_turningVoltage;
 
   // Gains are for example purposes only - must be determined for your own robot!
-  private final PIDController m_drivePIDController = new PIDController(1, 0, 0);
+  //private final PIDController m_drivePIDController = new PIDController(1, 0, 0);
 
   // Gains are for example purposes only - must be determined for your own robot!
   private final PIDController m_turningPIDController = new PIDController(1, 0, 0);
@@ -48,8 +46,8 @@ public class SwerveModuleSubsystem extends SubsystemBase {
               kModuleMaxAngularVelocity, kModuleMaxAngularAcceleration));*/
 
   // Gains are for example purposes only - must be determined for your own robot!
-  private final SimpleMotorFeedforward m_driveFeedforward = new SimpleMotorFeedforward(1, 3);
-  private final SimpleMotorFeedforward m_turnFeedforward = new SimpleMotorFeedforward(1, 0.5);
+  //private final SimpleMotorFeedforward m_driveFeedforward = new SimpleMotorFeedforward(1, 3);
+  //private final SimpleMotorFeedforward m_turnFeedforward = new SimpleMotorFeedforward(1, 0.5);
 
   /**
    * Constructs a SwerveModule with a drive motor, turning motor, drive encoder and turning encoder.
@@ -61,10 +59,25 @@ public class SwerveModuleSubsystem extends SubsystemBase {
       int driveMotorChannel,
       int turningMotorChannel,
       int cCoderChannel) {
+    //Create Motor Objects
     this.m_driveMotor = new WPI_TalonFX(driveMotorChannel);
     this.m_turningMotor = new WPI_TalonFX(turningMotorChannel);
     this.m_cCoder = new CANCoder(cCoderChannel);
 
+    //Configure Motors
+    this.m_driveMotor.configFactoryDefault();
+    this.m_driveMotor.setInverted(false);
+    this.m_driveMotor.setNeutralMode(NeutralMode.Brake);
+    this.m_turningMotor.configFactoryDefault();
+    this.m_turningMotor.setInverted(false);
+    this.m_turningMotor.setNeutralMode(NeutralMode.Brake);
+
+    //Configure Rotational Encoder
+    this.m_turningMotor.getSensorCollection().setIntegratedSensorPosition(
+      360 * this.m_cCoder.getPosition() / (2 * Math.PI), 
+      0);
+
+    //Configure Simulation
     this.m_driveMotorSim = m_driveMotor.getSimCollection();
     this.m_turningMotorSim = m_turningMotor.getSimCollection();
     this.m_driveVoltage = 0; //Tracking for simulation
@@ -81,7 +94,7 @@ public class SwerveModuleSubsystem extends SubsystemBase {
    * @return The current state of the module.
    */
   public SwerveModuleState getState() {
-    return new SwerveModuleState(getDriveVelocity(), new Rotation2d(getTurningDistance()));
+    return new SwerveModuleState(getDriveVelocity(), new Rotation2d(getRotationDistance() % kEncoderResolution));
   }
   
   public void zeroModule() {
@@ -96,17 +109,17 @@ public class SwerveModuleSubsystem extends SubsystemBase {
   public void setDesiredState(SwerveModuleState desiredState) {
     // Optimize the reference state to avoid spinning further than 90 degrees
     SwerveModuleState state =
-        SwerveModuleState.optimize(desiredState, new Rotation2d(getTurningDistance()));
+        SwerveModuleState.optimize(desiredState, new Rotation2d(getRotationDistance()));
 
     // Calculate the drive output from the drive PID controller.
     final double driveOutput =
-        12*state.speedMetersPerSecond/(2*Math.PI*kWheelRadius*kWheelRadius*(6380/60));//m_drivePIDController.calculate(getDriveVelocity(), state.speedMetersPerSecond);
+        12 * state.speedMetersPerSecond / (2 * Math.PI * kWheelRadius * kWheelRadius * (6380 / 60));//m_drivePIDController.calculate(getDriveVelocity(), state.speedMetersPerSecond);
 
     final double driveFeedforward = 0;//m_driveFeedforward.calculate(state.speedMetersPerSecond);
 
     // Calculate the turning motor output from the turning PID controller.
     final double turnOutput =
-        m_turningPIDController.calculate(getTurningDistance(), state.angle.getRadians());
+        m_turningPIDController.calculate(getRotationDistance(), state.angle.getRadians());
 
     final double turnFeedforward =
         0;//m_turnFeedforward.calculate(m_turningPIDController.getSetpoint().velocity);
@@ -120,6 +133,17 @@ public class SwerveModuleSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
+    SmartDashboard.putNumber("Motor Rotation", getRotationDistance());
+
+    //Update PID system with rotation feedback
+    final double turnOutput =
+        m_turningPIDController.calculate(getRotationDistance());
+    m_turningMotor.setVoltage(turnOutput);
+    m_turningVoltage = turnOutput;
+  }
+
+  @Override
+  public void simulationPeriodic() {
     //6380 is max motor rpm
     m_driveMotorSim.setIntegratedSensorRawPosition(
       (int)(
@@ -136,11 +160,6 @@ public class SwerveModuleSubsystem extends SubsystemBase {
       )
     );
     m_turningMotorSim.setIntegratedSensorVelocity((int)((m_turningVoltage / 12) * (kEncoderResolution*6380/60) * 0.02));
-
-    final double turnOutput =
-        m_turningPIDController.calculate(getTurningDistance());
-    m_turningMotor.setVoltage(turnOutput);
-    m_turningVoltage = turnOutput;
   }
 
   /**
@@ -168,7 +187,7 @@ public class SwerveModuleSubsystem extends SubsystemBase {
    * 
    * @return Turning motor position.
    */
-  private double getTurningDistance() {
+  private double getRotationDistance() {
     // Multiplies encoder ticks by radians per encoder tick.
     return m_turningMotor.getSensorCollection().getIntegratedSensorPosition() * 2 * Math.PI / kEncoderResolution;
   }
@@ -178,7 +197,7 @@ public class SwerveModuleSubsystem extends SubsystemBase {
    * 
    * @return Turning motor velocity.
    */
-  private double getTurningVelocity() {
+  private double getRotationVelocity() {
     // Multiplies encoder ticks per 100ms by radians per encoder tick.
     return m_turningMotor.getSensorCollection().getIntegratedSensorVelocity() * 2 * Math.PI / kEncoderResolution;
   }
