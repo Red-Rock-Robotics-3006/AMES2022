@@ -56,7 +56,7 @@ public class DrivetrainSubsytem extends SubsystemBase {
    *
    * @param xSpeed Speed of the robot in the x direction (forward).
    * @param ySpeed Speed of the robot in the y direction (sideways).
-   * @param rot Angular rate of the robot.
+   * @param rot Angular rate of the robot in degrees.
    * @param fieldRelative Whether the provided x and y speeds are relative to the field.
    */
   //@SuppressWarnings("ParameterName")
@@ -66,8 +66,8 @@ public class DrivetrainSubsytem extends SubsystemBase {
     var swerveModuleStates =
         m_kinematics.toSwerveModuleStates(
             fieldRelative
-                ? ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rot, m_gyro.getRotation2d())
-                : new ChassisSpeeds(xSpeed, ySpeed, rot));
+                ? ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, 2*Math.PI*(rot/360), m_gyro.getRotation2d()) //High Risk Change!
+                : new ChassisSpeeds(xSpeed, ySpeed, 2*Math.PI*(rot/360))); //High Risk Change!
     double idealModule1Velocity = swerveModuleStates[0].speedMetersPerSecond;
     SwerveDriveKinematics.desaturateWheelSpeeds(swerveModuleStates, kMaxSpeed);
 
@@ -75,10 +75,10 @@ public class DrivetrainSubsytem extends SubsystemBase {
       m_expectedRotVelocity *= swerveModuleStates[0].speedMetersPerSecond/idealModule1Velocity;
     }
     
-    //m_frontLeft.setDesiredState(swerveModuleStates[0]);
-    //m_frontRight.setDesiredState(swerveModuleStates[1]);
-    //m_backLeft.setDesiredState(swerveModuleStates[2]);
-    //m_backRight.setDesiredState(swerveModuleStates[3]);
+    m_frontLeft.setDesiredState(swerveModuleStates[0]); //High Risk Change!
+    m_frontRight.setDesiredState(swerveModuleStates[1]); //High Risk Change!
+    m_backLeft.setDesiredState(swerveModuleStates[2]); //High Risk Change!
+    m_backRight.setDesiredState(swerveModuleStates[3]); //High Risk Change!
   }
 
   public SwerveModuleState[] getModuleStates() {
@@ -86,7 +86,6 @@ public class DrivetrainSubsytem extends SubsystemBase {
   }
 
   public void zeroWheels() {
-    System.out.println("Running");
     m_frontLeft.zeroModule();
     m_frontRight.zeroModule();
     m_backLeft.zeroModule();

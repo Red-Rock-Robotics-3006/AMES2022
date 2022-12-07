@@ -137,14 +137,12 @@ public class SwerveModuleSubsystem extends SubsystemBase {
   public void periodic() {
     //Update PID system with rotation feedback
     m_turningPIDController.setSetpoint(-90);
-    final double turnOutput = //1 - (m_cCoder.getAbsolutePosition()%(2*Math.PI))/(2*Math.PI);
-        m_turningPIDController.calculate(m_cCoder.getAbsolutePosition());//getRotationDistance()%(2*Math.PI));
+    final double turnOutput = m_turningPIDController.calculate(m_cCoder.getAbsolutePosition());
     
-    m_turningMotor.set(ControlMode.PercentOutput, 0.7*turnOutput);//Math.max(-1, Math.min(1, turnOutput)));
-    //m_turningVoltage = turnOutput;
+    m_turningMotor.set(ControlMode.PercentOutput, turnOutput);
 
     SmartDashboard.putNumber("Motor Power" + m_turningMotor.getBaseID(), turnOutput);
-    SmartDashboard.putNumber("Motor Rotation" + m_turningMotor.getBaseID(), m_cCoder.getAbsolutePosition());//getRotationDistance()%(2*Math.PI));
+    SmartDashboard.putNumber("Motor Rotation" + m_turningMotor.getBaseID(), m_cCoder.getAbsolutePosition());
   }
 
   @Override

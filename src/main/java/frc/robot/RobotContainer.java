@@ -31,7 +31,6 @@ public class RobotContainer {
   }
 
   public void enableControllers() {
-    System.out.println("Hello---------");
     if (m_swerve.getDefaultCommand() != null) {
       m_swerve.getDefaultCommand().cancel();
     }
@@ -45,20 +44,18 @@ public class RobotContainer {
     m_swerve.setDefaultCommand(dc);
 
     new JoystickButton(m_controller, XboxController.Button.kA.value)
-      .whenPressed(() -> (new ZeroWheelsCommand(m_swerve)).schedule());
-      /*.whenReleased(new InstantCommand(() -> { 
-        m_swerve.setDefaultCommand(dc);;
-      }));*/
+      .whenPressed(
+        () -> (new ZeroWheelsCommand(m_swerve)).schedule()
+      );
   }
 
   public void disableControllers() {
-    /*zeroAllOutputs();
     if (m_swerve.getDefaultCommand() != null) {
       m_swerve.getDefaultCommand().cancel();
-    }
-    System.out.println("Deafult: " + m_swerve.getDefaultCommand());*/
+    } 
+
     RunCommand dc = new RunCommand(
-      () -> m_swerve.drive(0, 0, 0, true),
+      () -> zeroAllOutputs(),
       m_swerve
     );
     dc.setName("Stay Still");
