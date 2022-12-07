@@ -20,10 +20,14 @@ public class ZeroWheelsCommand extends CommandBase {
   }
 
   @Override
-  public void execute() {}
+  public void execute() {
+    System.out.println("Zeroing Wheels");
+  }
 
   @Override
-  public void end(boolean interrupted) {}
+  public void end(boolean interrupted) {
+    System.out.println("----\n----\n----\n----\n----\n----\n----\n----\n----\n----\n----\n----\n----\n----\n----\n----\n");
+  }
 
   @Override
   public boolean isFinished() {

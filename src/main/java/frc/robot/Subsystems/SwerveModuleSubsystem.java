@@ -10,6 +10,7 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
+import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.TalonFXSimCollection;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
@@ -37,7 +38,7 @@ public class SwerveModuleSubsystem extends SubsystemBase {
   //private final PIDController m_drivePIDController = new PIDController(1, 0, 0);
 
   // Gains are for example purposes only - must be determined for your own robot!
-  private final PIDController m_turningPIDController = new PIDController(1, 0, 0);
+  private final PIDController m_turningPIDController = new PIDController(0.001, 0, 0);
       /*new ProfiledPIDController(
           1,
           0,
@@ -85,7 +86,7 @@ public class SwerveModuleSubsystem extends SubsystemBase {
 
     // Limit the PID Controller's input range between -pi and pi and set the input
     // to be continuous.
-    this.m_turningPIDController.enableContinuousInput(-Math.PI, Math.PI);
+    this.m_turningPIDController.enableContinuousInput(0, 360);
   }
 
   /**
@@ -94,7 +95,7 @@ public class SwerveModuleSubsystem extends SubsystemBase {
    * @return The current state of the module.
    */
   public SwerveModuleState getState() {
-    return new SwerveModuleState(getDriveVelocity(), new Rotation2d(getRotationDistance() % kEncoderResolution));
+    return new SwerveModuleState(getDriveVelocity(), new Rotation2d(m_cCoder.getAbsolutePosition()));//getRotationDistance() % kEncoderResolution));
   }
   
   public void zeroModule() {
@@ -118,14 +119,15 @@ public class SwerveModuleSubsystem extends SubsystemBase {
     final double driveFeedforward = 0;//m_driveFeedforward.calculate(state.speedMetersPerSecond);
 
     // Calculate the turning motor output from the turning PID controller.
+    //m_turningPIDController.setSetpoint(90);//state.angle.getRadians());
     final double turnOutput =
-        m_turningPIDController.calculate(getRotationDistance(), state.angle.getRadians());
+        0;//m_turningPIDController.calculate(getRotationDistance()%(2*Math.PI));
 
     final double turnFeedforward =
         0;//m_turnFeedforward.calculate(m_turningPIDController.getSetpoint().velocity);
 
     m_driveMotor.setVoltage(driveOutput + driveFeedforward);
-    m_turningMotor.setVoltage(turnOutput + turnFeedforward);
+    //m_turningMotor.setVoltage(turnOutput + turnFeedforward);
     
     m_driveVoltage = driveOutput + driveFeedforward;
     m_turningVoltage = turnOutput + turnFeedforward;
@@ -133,13 +135,16 @@ public class SwerveModuleSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
-    SmartDashboard.putNumber("Motor Rotation", getRotationDistance());
-
     //Update PID system with rotation feedback
-    final double turnOutput =
-        m_turningPIDController.calculate(getRotationDistance());
-    m_turningMotor.setVoltage(turnOutput);
-    m_turningVoltage = turnOutput;
+    m_turningPIDController.setSetpoint(-90);
+    final double turnOutput = //1 - (m_cCoder.getAbsolutePosition()%(2*Math.PI))/(2*Math.PI);
+        m_turningPIDController.calculate(m_cCoder.getAbsolutePosition());//getRotationDistance()%(2*Math.PI));
+    
+    m_turningMotor.set(ControlMode.PercentOutput, 0.7*turnOutput);//Math.max(-1, Math.min(1, turnOutput)));
+    //m_turningVoltage = turnOutput;
+
+    SmartDashboard.putNumber("Motor Power" + m_turningMotor.getBaseID(), turnOutput);
+    SmartDashboard.putNumber("Motor Rotation" + m_turningMotor.getBaseID(), m_cCoder.getAbsolutePosition());//getRotationDistance()%(2*Math.PI));
   }
 
   @Override

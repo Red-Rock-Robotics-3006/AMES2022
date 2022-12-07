@@ -44,7 +44,7 @@ public class RobotContainer {
 
     m_swerve.setDefaultCommand(dc);
 
-    new Button(() -> m_controller.getRawAxis(0) > 0.5)
+    new JoystickButton(m_controller, XboxController.Button.kA.value)
       .whenPressed(() -> (new ZeroWheelsCommand(m_swerve)).schedule());
       /*.whenReleased(new InstantCommand(() -> { 
         m_swerve.setDefaultCommand(dc);;
