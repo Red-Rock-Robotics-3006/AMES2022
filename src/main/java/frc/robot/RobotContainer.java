@@ -1,6 +1,7 @@
 package frc.robot;
 
 import edu.wpi.first.math.filter.SlewRateLimiter;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandBase;
@@ -36,7 +37,7 @@ public class RobotContainer {
     }
 
     RunCommand dc = new RunCommand(
-        () -> m_swerve.drive(m_xspeedLimiter.calculate(m_controller.getRawAxis(0)), -m_yspeedLimiter.calculate(m_controller.getRawAxis(1)), m_rotLimiter.calculate(m_controller.getRawAxis(4)), true),
+        () -> m_swerve.setUniformDirection(new Rotation2d(m_controller.getRawAxis(0), m_controller.getRawAxis(1))),//m_swerve.drive(m_xspeedLimiter.calculate(m_controller.getRawAxis(0)), -m_yspeedLimiter.calculate(m_controller.getRawAxis(1)), m_rotLimiter.calculate(m_controller.getRawAxis(4)), true),
         m_swerve
       );
     dc.setName("Controller");
