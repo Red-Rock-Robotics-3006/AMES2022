@@ -4,8 +4,6 @@
 
 package frc.robot.Subsystems;
 
-import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -35,23 +33,6 @@ public class SwerveModuleSubsystem extends SubsystemBase {
   private final TalonFXSimCollection m_turningMotorSim;
   private double m_driveVoltage;
   private double m_turningVoltage;
-
-  // Gains are for example purposes only - must be determined for your own robot!
-  //private final PIDController m_drivePIDController = new PIDController(1, 0, 0);
-
-  // Gains are for example purposes only - must be determined for your own robot!
- // private final SimpleMotorFeedforward m_turningFeedforward = new SimpleMotorFeedforward(0, 0.00001);
-  private final PIDController m_turningPIDController = new PIDController(0.0005, 0, 0);
-      /*new ProfiledPIDController(
-          1,
-          0,
-          0,
-          new TrapezoidProfile.Constraints(
-              kModuleMaxAngularVelocity, kModuleMaxAngularAcceleration));*/
-
-  // Gains are for example purposes only - must be determined for your own robot!
-  //private final SimpleMotorFeedforward m_driveFeedforward = new SimpleMotorFeedforward(1, 3);
-  //private final SimpleMotorFeedforward m_turnFeedforward = new SimpleMotorFeedforward(1, 0.5);
 
   /**
    * Constructs a SwerveModule with a drive motor, turning motor, drive encoder and turning encoder.
@@ -88,10 +69,6 @@ public class SwerveModuleSubsystem extends SubsystemBase {
     this.m_turningMotorSim = m_turningMotor.getSimCollection();
     this.m_driveVoltage = 0; //Tracking for simulation
     this.m_turningVoltage = 0; //Tracking for simulation
-
-    // Limit the PID Controller's input range between -pi and pi and set the input
-    // to be continuous.
-    this.m_turningPIDController.enableContinuousInput(0, 360);
   }
 
   /**
@@ -113,31 +90,18 @@ public class SwerveModuleSubsystem extends SubsystemBase {
    * @param desiredState Desired state with speed and angle.
    */
   public void setDesiredState(SwerveModuleState desiredState) {
-    // Optimize the reference state to avoid spinning further than 90 degrees
-    //SwerveModuleState state =
-    //    SwerveModuleState.optimize(desiredState, new Rotation2d(getRotationDistance()));
-    this.targetState = desiredState;
-    /*
-    // Calculate the drive output from the drive PID controller.
-    final double driveOutput =
-        12 * state.speedMetersPerSecond / (2 * Math.PI * kWheelRadius * kWheelRadius * (6380 / 60));//m_drivePIDController.calculate(getDriveVelocity(), state.speedMetersPerSecond);
+    SwerveModuleState state = new SwerveModuleState(desiredState.speedMetersPerSecond, desiredState.angle);
 
-    final double driveFeedforward = 0;//m_driveFeedforward.calculate(state.speedMetersPerSecond);
+    if (
+      Math.min(
+        Math.abs(m_cCoder.getAbsolutePosition() - desiredState.angle.getDegrees()%360),
+        Math.abs(360 + desiredState.angle.getDegrees()%360 - m_cCoder.getAbsolutePosition())
+      ) > 90
+    ) {
+      state = new SwerveModuleState(-desiredState.speedMetersPerSecond, new Rotation2d(2*Math.PI*(desiredState.angle.getDegrees() + 180)/360d));
+    }
 
-    // Calculate the turning motor output from the turning PID controller.
-    //m_turningPIDController.setSetpoint(90);//state.angle.getRadians());
-    final double turnOutput =
-        0;//m_turningPIDController.calculate(getRotationDistance()%(2*Math.PI));
-
-    final double turnFeedforward =
-        0;//m_turnFeedforward.calculate(m_turningPIDController.getSetpoint().velocity);
-
-    //m_driveMotor.setVoltage(driveOutput + driveFeedforward);
-    //m_turningMotor.setVoltage(turnOutput + turnFeedforward);
-    
-    m_driveVoltage = driveOutput + driveFeedforward;
-    m_turningVoltage = turnOutput + turnFeedforward;
-    */
+    this.targetState = state;
   }
 
   @Override
@@ -148,11 +112,20 @@ public class SwerveModuleSubsystem extends SubsystemBase {
       targetAngle = 360 + targetAngle;
     }
 
-    double linearControl = 0.85*(
+    /*double linearControl = 0.85*(
       (m_cCoder.getAbsolutePosition() - targetAngle%360 < 180 ? 
       m_cCoder.getAbsolutePosition() - targetAngle%360 : 
       targetAngle%360 - m_cCoder.getAbsolutePosition())
-    )/360d;
+    )/360d;*/
+    double linearControl;
+    if (
+      Math.abs(m_cCoder.getAbsolutePosition() - targetAngle%360) < 
+      Math.abs(360 + targetAngle%360 - m_cCoder.getAbsolutePosition())
+    ) {
+      linearControl = 0.85*(m_cCoder.getAbsolutePosition() - targetAngle%360)/360d;
+    } else {
+      linearControl = -0.85*(360 - (m_cCoder.getAbsolutePosition() - targetAngle%360))/360d;
+    }
 
     final double turnOutput = Math.signum(linearControl) * Math.pow(
       Math.abs(linearControl),

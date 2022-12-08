@@ -110,9 +110,14 @@ public class DrivetrainSubsytem extends SubsystemBase {
         m_backRight.getState());
     m_fieldSim.setRobotPose(m_odometry.getPoseMeters());
   }
+  
+  @Override
+  public void periodic() {
+    m_gyroSim.setAngle(m_gyroSim.getAngle()+0.02*360*m_expectedRotVelocity/(2*Math.PI)); //Should really go in simulation periodic but is needed for rough angle approximation
+  }
 
   @Override 
   public void simulationPeriodic() {
-    m_gyroSim.setAngle(m_gyroSim.getAngle()+0.02*360*m_expectedRotVelocity/(2*Math.PI));
+    //m_gyroSim.setAngle(m_gyroSim.getAngle()+0.02*360*m_expectedRotVelocity/(2*Math.PI));
   }
 }
