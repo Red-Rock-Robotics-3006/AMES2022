@@ -37,7 +37,8 @@ public class RobotContainer {
     }
 
     RunCommand dc = new RunCommand(
-        () -> m_swerve.setUniformDirection(new Rotation2d(m_controller.getRawAxis(0), m_controller.getRawAxis(1))),//m_swerve.drive(m_xspeedLimiter.calculate(m_controller.getRawAxis(0)), -m_yspeedLimiter.calculate(m_controller.getRawAxis(1)), m_rotLimiter.calculate(m_controller.getRawAxis(4)), true),
+        //() -> m_swerve.setUniformDirection(new Rotation2d(0.5*Math.PI)),//new Rotation2d(m_controller.getRawAxis(0), m_controller.getRawAxis(1))),//m_swerve.drive(m_xspeedLimiter.calculate(m_controller.getRawAxis(0)), -m_yspeedLimiter.calculate(m_controller.getRawAxis(1)), m_rotLimiter.calculate(m_controller.getRawAxis(4)), true),
+        () -> m_swerve.drive(m_controller.getRawAxis(0), m_controller.getRawAxis(1), m_controller.getRawAxis(4)*100, true),
         m_swerve
       );
     dc.setName("Controller");

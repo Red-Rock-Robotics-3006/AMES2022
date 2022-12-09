@@ -26,10 +26,10 @@ public class DrivetrainSubsytem extends SubsystemBase {
   private final Translation2d m_backLeftLocation = new Translation2d(-0.381, 0.381);
   private final Translation2d m_backRightLocation = new Translation2d(-0.381, -0.381);
 
-  private final SwerveModuleSubsystem m_frontLeft = new SwerveModuleSubsystem(20, 6, 0);
-  private final SwerveModuleSubsystem m_frontRight = new SwerveModuleSubsystem(11, 8, 41);
-  private final SwerveModuleSubsystem m_backLeft = new SwerveModuleSubsystem(4, 5, 44);
-  private final SwerveModuleSubsystem m_backRight = new SwerveModuleSubsystem(50, 3, 43);
+  private final SwerveModuleSubsystem m_frontLeft = new SwerveModuleSubsystem(20, 6, 0, false);
+  private final SwerveModuleSubsystem m_frontRight = new SwerveModuleSubsystem(11, 8, 41, true);
+  private final SwerveModuleSubsystem m_backLeft = new SwerveModuleSubsystem(4, 5, 44, false);
+  private final SwerveModuleSubsystem m_backRight = new SwerveModuleSubsystem(50, 3, 43, true);
 
   private final AnalogGyro m_gyro = new AnalogGyro(0);
   private final AnalogGyroSim m_gyroSim = new AnalogGyroSim(m_gyro);
@@ -62,24 +62,31 @@ public class DrivetrainSubsytem extends SubsystemBase {
    */
   //@SuppressWarnings("ParameterName")
   public void drive(double xSpeed, double ySpeed, double rot, boolean fieldRelative) {
-    m_expectedRotVelocity = rot;
-    
-    var swerveModuleStates =
-        m_kinematics.toSwerveModuleStates(
-            fieldRelative
-                ? ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, 2*Math.PI*(rot/360), m_gyro.getRotation2d()) //High Risk Change!
-                : new ChassisSpeeds(xSpeed, ySpeed, 2*Math.PI*(rot/360))); //High Risk Change!
-    double idealModule1Velocity = swerveModuleStates[0].speedMetersPerSecond;
-    SwerveDriveKinematics.desaturateWheelSpeeds(swerveModuleStates, kMaxSpeed);
+    if (Math.abs(xSpeed) + Math.abs(ySpeed) > 0.05) {
+      m_expectedRotVelocity = rot;
+      
+      var swerveModuleStates =
+          m_kinematics.toSwerveModuleStates(
+              fieldRelative
+                  ? ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, 2*Math.PI*(rot/360), m_gyro.getRotation2d()) //High Risk Change!
+                  : new ChassisSpeeds(xSpeed, ySpeed, 2*Math.PI*(rot/360))); //High Risk Change!
+      double idealModule1Velocity = swerveModuleStates[0].speedMetersPerSecond;
+      SwerveDriveKinematics.desaturateWheelSpeeds(swerveModuleStates, kMaxSpeed);
 
-    if (Math.abs(swerveModuleStates[0].speedMetersPerSecond) > 0.001 && Math.abs(idealModule1Velocity) > 0.001) {
-      m_expectedRotVelocity *= swerveModuleStates[0].speedMetersPerSecond/idealModule1Velocity;
+      if (Math.abs(swerveModuleStates[0].speedMetersPerSecond) > 0.001 && Math.abs(idealModule1Velocity) > 0.001) {
+        m_expectedRotVelocity *= swerveModuleStates[0].speedMetersPerSecond/idealModule1Velocity;
+      }
+      
+      m_frontLeft.setDesiredState(swerveModuleStates[0]); //High Risk Change!
+      m_frontRight.setDesiredState(swerveModuleStates[1]); //High Risk Change!
+      m_backLeft.setDesiredState(swerveModuleStates[2]); //High Risk Change!
+      m_backRight.setDesiredState(swerveModuleStates[3]); //High Risk Change!
+    } else {
+      //m_frontLeft.zeroPower();
+      //m_frontRight.zeroPower();
+      //m_backLeft.zeroPower();
+      //m_backRight.zeroPower();
     }
-    
-    m_frontLeft.setDesiredState(swerveModuleStates[0]); //High Risk Change!
-    m_frontRight.setDesiredState(swerveModuleStates[1]); //High Risk Change!
-    m_backLeft.setDesiredState(swerveModuleStates[2]); //High Risk Change!
-    m_backRight.setDesiredState(swerveModuleStates[3]); //High Risk Change!
   }
 
   public SwerveModuleState[] getModuleStates() {

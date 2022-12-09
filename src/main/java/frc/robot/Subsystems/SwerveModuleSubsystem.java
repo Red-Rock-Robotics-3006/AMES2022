@@ -29,6 +29,8 @@ public class SwerveModuleSubsystem extends SubsystemBase {
   private final WPI_TalonFX m_turningMotor;
   private final CANCoder m_cCoder;
 
+  private int inversion = 1;
+
   private final TalonFXSimCollection m_driveMotorSim;
   private final TalonFXSimCollection m_turningMotorSim;
   private double m_driveVoltage;
@@ -43,7 +45,9 @@ public class SwerveModuleSubsystem extends SubsystemBase {
   public SwerveModuleSubsystem(
       int driveMotorChannel,
       int turningMotorChannel,
-      int cCoderChannel) {
+      int cCoderChannel,
+      boolean inverted) {
+
     this.targetState = new SwerveModuleState();
 
     //Create Motor Objects
@@ -53,7 +57,7 @@ public class SwerveModuleSubsystem extends SubsystemBase {
 
     //Configure Motors
     this.m_driveMotor.configFactoryDefault();
-    this.m_driveMotor.setInverted(false);
+    this.m_driveMotor.setInverted(inverted);
     this.m_driveMotor.setNeutralMode(NeutralMode.Brake);
     this.m_turningMotor.configFactoryDefault();
     this.m_turningMotor.setInverted(false);
@@ -84,47 +88,77 @@ public class SwerveModuleSubsystem extends SubsystemBase {
     setDesiredState(new SwerveModuleState(0d, new Rotation2d(0)));
   }
 
+  public void zeroPower() {
+    setDesiredState(new SwerveModuleState(0d, getState().angle));
+  }
+
   /**
    * Sets the desired state for the module.
    *
    * @param desiredState Desired state with speed and angle.
    */
   public void setDesiredState(SwerveModuleState desiredState) {
-    SwerveModuleState state = new SwerveModuleState(desiredState.speedMetersPerSecond, desiredState.angle);
+    System.out.println("10, 10: " + shortestAngleDist(10, 10));
+    System.out.println("20, 10: " + shortestAngleDist(20, 10));
+    System.out.println("10, 20: " + shortestAngleDist(10, 20));
+    System.out.println("130, 10: " + shortestAngleDist(130, 10));
+    System.out.println("10, 130: " + shortestAngleDist(10, 130));
+    System.out.println("1300, 10: " + shortestAngleDist(1300, 10));
+    System.out.println("10, 1300: " + shortestAngleDist(10, 1300));
+    System.out.println("-130, 10: " + shortestAngleDist(-130, 10));
+    System.out.println("-10, 130: " + shortestAngleDist(10, -130));
+    System.out.println("350, 10: " + shortestAngleDist(350, 10));
+    System.out.println("10, 350: " + shortestAngleDist(10, 350));
+    System.out.println("350, 10: " + shortestAngleDist(350, 190));
+    System.out.println("10, 350: " + shortestAngleDist(190, 350));
 
-    if (
-      Math.min(
-        Math.abs(m_cCoder.getAbsolutePosition() - desiredState.angle.getDegrees()%360),
-        Math.abs(360 + desiredState.angle.getDegrees()%360 - m_cCoder.getAbsolutePosition())
-      ) > 90
-    ) {
-      state = new SwerveModuleState(-desiredState.speedMetersPerSecond, new Rotation2d(2*Math.PI*(desiredState.angle.getDegrees() + 180)/360d));
-    }
+    double targetAngle = desiredState.angle.getDegrees();
+    targetAngle = Math.IEEEremainder(targetAngle, 360);
+    if (targetAngle < 0) targetAngle += 360;
 
+    SwerveModuleState state = new SwerveModuleState(
+      desiredState.speedMetersPerSecond, 
+      new Rotation2d(
+        2*Math.PI*targetAngle/360
+      ));
+    
+      SmartDashboard.putNumber("Raw Target Angle" + m_turningMotor.getBaseID(), targetAngle/360d);
+
+    SmartDashboard.putNumber("Sent Angle" + m_turningMotor.getBaseID(), targetAngle/360);
+    SmartDashboard.putNumber("Min Travel" + m_turningMotor.getBaseID(), shortestAngleDist(this.m_cCoder.getAbsolutePosition(), targetAngle)/360);
+    /*if (shortestAngleDist(this.m_cCoder.getAbsolutePosition(), targetAngle) > 90) {
+      state = new SwerveModuleState(
+        -desiredState.speedMetersPerSecond, 
+        new Rotation2d(2*Math.PI*Math.IEEEremainder(targetAngle+180, 360)/360d)
+        );
+      SmartDashboard.putNumber("Sent Angle" + m_turningMotor.getBaseID(), Math.IEEEremainder(targetAngle+180, 360)/360d);
+      SmartDashboard.putNumber("Optimization Mode" + m_turningMotor.getBaseID(), 1);
+    } else {
+      SmartDashboard.putNumber("Optimization Mode" + m_turningMotor.getBaseID(), 0);
+    }*/
+    
     this.targetState = state;
   }
 
   @Override
   public void periodic() {
-    double targetAngle = this.targetState.angle.getDegrees();
-    targetAngle %= 360;
+    double targetAngle = -this.targetState.angle.getDegrees();
+    targetAngle = Math.IEEEremainder(targetAngle, 360);
     if (targetAngle < 0) {
       targetAngle = 360 + targetAngle;
     }
-
-    /*double linearControl = 0.85*(
-      (m_cCoder.getAbsolutePosition() - targetAngle%360 < 180 ? 
-      m_cCoder.getAbsolutePosition() - targetAngle%360 : 
-      targetAngle%360 - m_cCoder.getAbsolutePosition())
-    )/360d;*/
+    
     double linearControl;
     if (
       Math.abs(m_cCoder.getAbsolutePosition() - targetAngle%360) < 
-      Math.abs(360 + targetAngle%360 - m_cCoder.getAbsolutePosition())
+      360 - Math.abs(m_cCoder.getAbsolutePosition() - targetAngle%360)
     ) {
       linearControl = 0.85*(m_cCoder.getAbsolutePosition() - targetAngle%360)/360d;
+      SmartDashboard.putNumber("Turning Mode" + m_turningMotor.getBaseID(), 0);
     } else {
-      linearControl = -0.85*(360 - (m_cCoder.getAbsolutePosition() - targetAngle%360))/360d;
+      linearControl = -0.85*(360 - Math.abs(m_cCoder.getAbsolutePosition() - targetAngle%360))/360d;
+      linearControl *= Math.signum(m_cCoder.getAbsolutePosition() - targetAngle%360);
+      SmartDashboard.putNumber("Turning Mode" + m_turningMotor.getBaseID(), 1);
     }
 
     final double turnOutput = Math.signum(linearControl) * Math.pow(
@@ -132,10 +166,12 @@ public class SwerveModuleSubsystem extends SubsystemBase {
       1d/1.5
     );
 
-    m_turningMotor.set(ControlMode.PercentOutput, turnOutput);
+    m_turningMotor.set(ControlMode.PercentOutput, turnOutput*this.inversion);
+    m_driveMotor.set(ControlMode.PercentOutput, 0.2*this.targetState.speedMetersPerSecond);
 
+    SmartDashboard.putNumber("Target Angle" + m_turningMotor.getBaseID(), targetAngle/360);
     SmartDashboard.putNumber("Motor Power" + m_turningMotor.getBaseID(), turnOutput);
-    SmartDashboard.putNumber("Motor Rotation" + m_turningMotor.getBaseID(), m_cCoder.getAbsolutePosition());
+    SmartDashboard.putNumber("Motor Rotation" + m_turningMotor.getBaseID(), m_cCoder.getAbsolutePosition()/360);
   }
 
   @Override
@@ -234,4 +270,19 @@ public class SwerveModuleSubsystem extends SubsystemBase {
     double positionMeters = wheelRotations * (2 * Math.PI * kWheelRadius);
     return positionMeters;
   }
+
+  private double shortestAngleDist(double input, double target) {
+    double norm_input = Math.IEEEremainder(input, 360); //205
+    double norm_target = Math.IEEEremainder(target, 360); //68
+
+    if (norm_input < 0) norm_input += 360; //205
+    if (norm_target < 0) norm_target += 360; //68
+
+    return Math.min(
+      Math.abs(norm_input - norm_target), //abs(137)
+      Math.abs(360 - Math.abs(norm_input - norm_target)) //abs(360 +210)
+      );
+  }
+
+//  private double 
 }
