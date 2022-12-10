@@ -17,6 +17,7 @@ import frc.robot.Subsystems.DrivetrainSubsytem;
 
 public class RobotContainer {
   private final XboxController m_controller = new XboxController(0);
+  private final XboxController m_controller2 = new XboxController(1);
   private final DrivetrainSubsytem m_swerve = new DrivetrainSubsytem();
 
   // Slew rate limiters to make joystick inputs more gentle; 1/3 sec from 0 to 1.
@@ -38,17 +39,17 @@ public class RobotContainer {
 
     RunCommand dc = new RunCommand(
         //() -> m_swerve.setUniformDirection(new Rotation2d(0.5*Math.PI)),//new Rotation2d(m_controller.getRawAxis(0), m_controller.getRawAxis(1))),//m_swerve.drive(m_xspeedLimiter.calculate(m_controller.getRawAxis(0)), -m_yspeedLimiter.calculate(m_controller.getRawAxis(1)), m_rotLimiter.calculate(m_controller.getRawAxis(4)), true),
-        () -> m_swerve.drive(m_controller.getRawAxis(0), m_controller.getRawAxis(1), m_controller.getRawAxis(4)*100, true),
+        () -> m_swerve.drive(m_controller.getRawAxis(0), m_controller.getRawAxis(1), m_controller2.getRawAxis(0)*100, true),
         m_swerve
       );
     dc.setName("Controller");
 
     m_swerve.setDefaultCommand(dc);
 
-    new JoystickButton(m_controller, XboxController.Button.kA.value)
+    /*new JoystickButton(m_controller, XboxController.Button.kA.value)
       .whenPressed(
         () -> (new ZeroWheelsCommand(m_swerve)).schedule()
-      );
+      );*/
   }
 
   public void disableControllers() {

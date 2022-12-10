@@ -89,7 +89,7 @@ public class SwerveModuleSubsystem extends SubsystemBase {
   }
 
   public void zeroPower() {
-    setDesiredState(new SwerveModuleState(0d, getState().angle));
+    setDesiredState(new SwerveModuleState(0d, this.targetState.angle));
   }
 
   /**
@@ -98,7 +98,7 @@ public class SwerveModuleSubsystem extends SubsystemBase {
    * @param desiredState Desired state with speed and angle.
    */
   public void setDesiredState(SwerveModuleState desiredState) {
-    System.out.println("10, 10: " + shortestAngleDist(10, 10));
+    /*System.out.println("10, 10: " + shortestAngleDist(10, 10));
     System.out.println("20, 10: " + shortestAngleDist(20, 10));
     System.out.println("10, 20: " + shortestAngleDist(10, 20));
     System.out.println("130, 10: " + shortestAngleDist(130, 10));
@@ -110,7 +110,7 @@ public class SwerveModuleSubsystem extends SubsystemBase {
     System.out.println("350, 10: " + shortestAngleDist(350, 10));
     System.out.println("10, 350: " + shortestAngleDist(10, 350));
     System.out.println("350, 10: " + shortestAngleDist(350, 190));
-    System.out.println("10, 350: " + shortestAngleDist(190, 350));
+    System.out.println("10, 350: " + shortestAngleDist(190, 350));*/
 
     double targetAngle = desiredState.angle.getDegrees();
     targetAngle = Math.IEEEremainder(targetAngle, 360);
@@ -140,8 +140,11 @@ public class SwerveModuleSubsystem extends SubsystemBase {
     this.targetState = state;
   }
 
+
   @Override
   public void periodic() {
+    System.out.println(System.currentTimeMillis());
+
     double targetAngle = -this.targetState.angle.getDegrees();
     targetAngle = Math.IEEEremainder(targetAngle, 360);
     if (targetAngle < 0) {
@@ -150,14 +153,14 @@ public class SwerveModuleSubsystem extends SubsystemBase {
     
     double linearControl;
     if (
-      Math.abs(m_cCoder.getAbsolutePosition() - targetAngle%360) < 
-      360 - Math.abs(m_cCoder.getAbsolutePosition() - targetAngle%360)
+      Math.abs(m_cCoder.getAbsolutePosition() - targetAngle) < 
+      360 - Math.abs(m_cCoder.getAbsolutePosition() - targetAngle)
     ) {
-      linearControl = 0.85*(m_cCoder.getAbsolutePosition() - targetAngle%360)/360d;
+      linearControl = 0.85*(m_cCoder.getAbsolutePosition() - targetAngle)/360d;
       SmartDashboard.putNumber("Turning Mode" + m_turningMotor.getBaseID(), 0);
     } else {
-      linearControl = -0.85*(360 - Math.abs(m_cCoder.getAbsolutePosition() - targetAngle%360))/360d;
-      linearControl *= Math.signum(m_cCoder.getAbsolutePosition() - targetAngle%360);
+      linearControl = -0.85*(360 - Math.abs(m_cCoder.getAbsolutePosition() - targetAngle))/360d;
+      linearControl *= Math.signum(m_cCoder.getAbsolutePosition() - targetAngle);
       SmartDashboard.putNumber("Turning Mode" + m_turningMotor.getBaseID(), 1);
     }
 
@@ -166,8 +169,8 @@ public class SwerveModuleSubsystem extends SubsystemBase {
       1d/1.5
     );
 
-    m_turningMotor.set(ControlMode.PercentOutput, turnOutput*this.inversion);
-    m_driveMotor.set(ControlMode.PercentOutput, 0.2*this.targetState.speedMetersPerSecond);
+    m_turningMotor.set(ControlMode.PercentOutput, turnOutput);
+    m_driveMotor.set(ControlMode.PercentOutput, 0.5*this.targetState.speedMetersPerSecond);
 
     SmartDashboard.putNumber("Target Angle" + m_turningMotor.getBaseID(), targetAngle/360);
     SmartDashboard.putNumber("Motor Power" + m_turningMotor.getBaseID(), turnOutput);
