@@ -9,6 +9,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
+import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.AnalogGyro;
 import edu.wpi.first.wpilibj.simulation.AnalogGyroSim;
@@ -44,7 +45,7 @@ public class DrivetrainSubsytem extends SubsystemBase {
           m_frontLeftLocation, m_frontRightLocation, m_backLeftLocation, m_backRightLocation);
 
   private final SwerveDriveOdometry m_odometry =
-      new SwerveDriveOdometry(m_kinematics, new Rotation2d(-2*Math.PI*m_gyro.getYaw()/360d));//getRotation2d());
+      new SwerveDriveOdometry(m_kinematics, new Rotation2d(-2*Math.PI*m_gyro.getYaw()/360d), null);//getRotation2d());
 
   public DrivetrainSubsytem() {
     m_gyro.setYaw(0);//.reset();
@@ -111,12 +112,16 @@ public class DrivetrainSubsytem extends SubsystemBase {
 
   /** Updates the field relative position of the robot. */
   public void updateOdometry() {
+    SwerveModulePosition[] pos = new SwerveModulePosition[]{
+      m_frontLeft.getPosition(),
+      m_frontRight.getPosition(),
+      m_backLeft.getPosition(),
+      m_frontRight.getPosition()
+    };
     m_odometry.update(
         new Rotation2d(-2*Math.PI*m_gyro.getYaw()/360),//getRotation2d(),
-        m_frontLeft.getState(),
-        m_frontRight.getState(),
-        m_backLeft.getState(),
-        m_backRight.getState());
+        pos
+      );
     m_fieldSim.setRobotPose(m_odometry.getPoseMeters());
   }
   
